@@ -8,3 +8,7 @@ urllib3==1.26.14
 PySocks==1.7.1
 stem==1.8.0
 whois
+huggingface_hub
+supervision
+ultralytics
+pillow
