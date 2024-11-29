@@ -8,6 +8,29 @@ import google.generativeai as genai
 # AIzaSyBsPtYQHgQLVf3Xw_USVU1CK4T5K9bgjQY
 
 
+# def google_seach(url):
+#     API_KEY = "AIzaSyBEP5xiyC30nceYKZqFkE1lHuobaQ01JE4"
+#     SEARCH_ENGINE_ID = "a42052c32ac90420b"
+
+#     # search_query = "https://business-cool.com/wp-content/uploads/2023/01/Elon_Musk_Royal_Society-e1681813122429.jpg"
+#     url = "https://www.googleapis.com/customsearch/v1"
+#     params = {"q": API_KEY,
+#             "key": API_KEY, 
+#             "cx": SEARCH_ENGINE_ID,
+#             'seachType': 'image'
+#             }
+#     response = requests.get(url, params=params)
+#     results = response.json()['items']
+
+#     [print(f"{i+1}. {result['link']}") for i, result['link'] in enumerate(results)]
+#     selected_link = int(input("enter the link number: "))
+#     url = response_dict_list[selected_link - 1]["link"]
+#     print(f"selected link: {url}")
+#     return url
+
+
+
+
 def get_google_rev_search_results(image_url):
     # code for google reverse serach start here
     request = GoogleReverseImageSearch()
@@ -64,11 +87,12 @@ def extract_text_from_html(html_name):
 
 
 def get_summary(text):
+    prompt = '\n"Summarize the main person mentioned in the provided content in no more than 200 words. Focus on their professional journey, including notable workplaces and achievements, as well as their estimated net worth. If multiple individuals are referenced, prioritize the most prominent figure and disregard the others. Ensure the summary is comprehensive and highlights key aspects of their career, works and financial standing."'
     genai.configure(api_key="AIzaSyBsPtYQHgQLVf3Xw_USVU1CK4T5K9bgjQY")
     model = genai.GenerativeModel("gemini-1.5-flash")
     response = model.generate_content(
         text
-        + " \n write a summary for the above content about the person with in 200words max"
+        + prompt
     )
     return response.text
 
@@ -122,3 +146,48 @@ def face_detection(folder_path):
                     print(f"Processed {image_path} and saved detected faces.")
                 except Exception as e:
                     print(f"Error processing {image_path}: {e}")
+
+
+def google_search(search_query):
+    API_KEY = "AIzaSyBEP5xiyC30nceYKZqFkE1lHuobaQ01JE4"  # Replace with your API key
+    SEARCH_ENGINE_ID = "a42052c32ac90420b"  # Replace with your search engine ID
+
+    url = "https://www.googleapis.com/customsearch/v1"
+    params = {
+        "q": search_query,
+        "key": API_KEY,
+        "cx": SEARCH_ENGINE_ID,
+        # Uncomment this for image search
+        # 'searchType': 'image'
+    }
+
+    try:
+        response = requests.get(url, params=params)
+        results = response.json()['items']
+
+        if not results:
+            print("No results found.")
+            return None
+
+        # Display search results
+        for i, result in enumerate(results):
+            print(f"{i+1}. {result['link']}")
+
+        # User selects a link
+        selected_link = int(input("Enter the link number: "))
+        if 1 <= selected_link <= len(results):
+            url = results[selected_link - 1]["link"]
+            print(f"Selected link: {url}")
+            return url
+        else:
+            print("Invalid selection. Please try again.")
+            return None
+
+    except requests.RequestException as e:
+        print(f"An error occurred while making the request: {e}")
+    except KeyError:
+        print("Unexpected response format from the API.")
+    except ValueError:
+        print("Invalid input. Please enter a valid number.")
+    return None
+
