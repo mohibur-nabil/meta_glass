@@ -12,3 +12,4 @@ huggingface_hub
 supervision
 ultralytics
 pillow
+selenium==4.27.1
