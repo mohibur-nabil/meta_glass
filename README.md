@@ -8,6 +8,7 @@ To run the full pipeline, follow these steps:
     ```bash
     https://github.com/mohibur-nabil/meta_glass.git
     cd meta_glass
+    git switch test
     ```
 
 2. Install the required dependencies:
