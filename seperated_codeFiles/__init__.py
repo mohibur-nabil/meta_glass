@@ -1,7 +1,0 @@
-from reverse_image_search import GoogleReverseImageSearch
-import requests
-from bs4 import BeautifulSoup
-import google.generativeai as genai
-# AIzaSyBAxvmdk40w79RyBKQCKRi7XvmqD2S5qpw
-# AIzaSyA6YktiwkyhRTrNYvJ8Mms3xMbWtKfyrq4
-# AIzaSyBsPtYQHgQLVf3Xw_USVU1CK4T5K9bgjQY
