@@ -38,7 +38,7 @@ Enter the Facebook live video link: https://www.facebook.com/username/live/video
     ```bash
     python image_upload_pipeline.py
     ```
-2. Modify the image_path variable based on requirement. By defautl it is using `detected_faces/nm.jpg` image
+2. Modify the `image_path` variable based on requirement. By defautl it is using `detected_faces/nm.jpg` image
 
 
 
