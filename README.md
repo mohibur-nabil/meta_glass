@@ -6,8 +6,8 @@ To run the full pipeline, follow these steps:
 
 1. Clone the repository:
     ```bash
-    git clone https://github.com/yourusername/your-repo-name.git
-    cd your-repo-name
+    https://github.com/mohibur-nabil/meta_glass.git
+    cd meta_glass
     ```
 
 2. Install the required dependencies:
