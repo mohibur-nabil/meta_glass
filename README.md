@@ -6,7 +6,7 @@ To run the full pipeline, follow these steps:
 
 1. Clone the repository:
     ```bash
-    https://github.com/mohibur-nabil/meta_glass.git
+    git clone https://github.com/mohibur-nabil/meta_glass.git
     cd meta_glass
     git switch test
     ```
