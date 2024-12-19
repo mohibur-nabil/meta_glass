@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Image Upload</title>
+    <link
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      #progressBar {
+        transition: width 30s linear;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container mt-5">
+      <div class="row justify-content-center">
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-body text-center">
+              <h1 class="card-title">Upload Image</h1>
+              <input
+                type="file"
+                class="form-control-file my-3"
+                id="imageInput"
+                accept="image/*"
+              />
+              <button class="btn btn-primary" onclick="uploadImage()">
+                Upload
+              </button>
+              <div id="processingMessage" class="mt-3" style="display: none">
+                <p>Image is being processed...</p>
+              </div>
+              <div id="progress" class="progress mt-3" style="display: none">
+                <div
+                  id="progressBar"
+                  class="progress-bar progress-bar-striped progress-bar-animated bg-success"
+                  role="progressbar"
+                  style="width: 0%"
+                ></div>
+              </div>
+              <div id="result" class="mt-3"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      async function uploadImage() {
+        const input = document.getElementById("imageInput");
+        const processingMessage = document.getElementById("processingMessage");
+        const progress = document.getElementById("progress");
+        const progressBar = document.getElementById("progressBar");
+        const resultDiv = document.getElementById("result");
+
+        if (input.files.length === 0) {
+          alert("Please select an image file to upload.");
+          return;
+        }
+
+        const file = input.files[0];
+        const formData = new FormData();
+        formData.append("file", file);
+
+        try {
+          // Show processing message and progress bar
+          processingMessage.style.display = "block";
+          progress.style.display = "block";
+          resultDiv.innerText = "";
+          progressBar.style.width = "0%";
+
+          // Simulate progress over 30 seconds (30000 milliseconds)
+          let progressValue = 0;
+          const totalTime = 30000; // 30 seconds
+          const intervalTime = 100; // Update every 100ms
+          const increment = (intervalTime / totalTime) * 100; // Percentage increment per update
+
+          const progressInterval = setInterval(() => {
+            progressValue += increment;
+            progressBar.style.width = `${progressValue}%`;
+            if (progressValue >= 100) {
+              clearInterval(progressInterval);
+            }
+          }, intervalTime);
+
+          // Upload image
+          const response = await fetch("http://127.0.0.1:8000/upload-image/", {
+            method: "POST",
+            body: formData,
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            resultDiv.innerText = `Error: ${errorData.error}`;
+            throw new Error("Failed to upload image.");
+          }
+
+          const result = await response.json();
+          resultDiv.innerText = result.result;
+        } catch (error) {
+          console.error("Error:", error);
+          resultDiv.innerText = "Error uploading image.";
+        } finally {
+          // Hide processing message and progress bar once result is received
+          processingMessage.style.display = "none";
+          progress.style.display = "none";
+        }
+      }
+    </script>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  </body>
+</html>
