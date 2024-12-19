@@ -6,9 +6,10 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium import webdriver
 from bs4 import BeautifulSoup
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 import re
 import os
+
 
 def extract_urls_from_html(html_file, output_file="extracted_urls.txt"):
 
@@ -30,68 +31,78 @@ def extract_urls_from_html(html_file, output_file="extracted_urls.txt"):
         print(f"An error occurred: {e}")
         return 0
 
+
 def save_cookies(driver, cookies_file):
+    # Get the current time in a readable format
+    current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
+
+    # Create a dictionary to store cookies and the timestamp
+    cookies_data = {"cookies": driver.get_cookies(), "saved_at": current_time}
+    # Save the cookies and timestamp to the file
     with open(cookies_file, "wb") as file:
-        pickle.dump(driver.get_cookies(), file)
+        pickle.dump(cookies_data, file)
 
 
+from datetime import datetime, timezone
 import pickle
-from datetime import datetime, timedelta
+
 
 def load_cookies(driver, cookies_file):
-   
     with open(cookies_file, "rb") as file:
-        cookies = pickle.load(file)
-        session_alive = False
-        session_expiry = None
-        for cookie in cookies:
-            # Add cookie to the browser
-            driver.add_cookie(cookie)
-            
-            # Check if the cookie is active and determine session expiry
-            if 'expiry' in cookie:
-                expiry_time = datetime.fromtimestamp(cookie['expiry'])
-                current_time = datetime.now()
-                if expiry_time > current_time:
-                    session_alive = True
-                    if session_expiry is None or expiry_time > session_expiry:
-                        session_expiry = expiry_time
-        
-        # Print if the session is active
-        if session_alive:
-            print("Cookie is active.")
-            
-            # Calculate and print how long the session is alive
-            if session_expiry:
-                time_remaining = session_expiry - datetime.now()
-                print(f"Session is alive for {time_remaining}.")
+        cookies_data = pickle.load(file)
+
+        session_creation_time = cookies_data["saved_at"]
+        saved_time = datetime.strptime(session_creation_time, "%Y-%m-%d %H:%M:%S")
+
+        # Convert saved_time to aware datetime (in UTC)
+        saved_time = saved_time.replace(tzinfo=timezone.utc)
+
+        # Get the current time in UTC (aware)
+        current_time = datetime.now(timezone.utc)
+
+        # Calculate the time difference between now and the saved time
+        time_difference = current_time - saved_time
+        print(f"Time difference: {time_difference.total_seconds()/(60*60)}")
+        print()
+        if time_difference.total_seconds() <= 2 * 60 * 60:  # 2 hours in seconds
+            cookies = cookies_data["cookies"]
+            for cookie in cookies:
+                driver.add_cookie(cookie)
+            print("Cookie loaded successfully.")
             return True
         else:
-            print("Cookie is not active or expired.")
+            print("Cookie expired.")
             return False
+
 
 def is_logged_in(driver):
     try:
-        
+
         # Find and click the button with the class 'auth' and text 'My Account'
         button = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable(
-                (By.XPATH, "//button[contains(@class, 'auth') and span[text()='My Account']]")
+                (
+                    By.XPATH,
+                    "//button[contains(@class, 'auth') and span[text()='My Account']]",
+                )
             )
         )
-        print('login wait...')
-        
+        print("login wait...")
+
         button.click()
-        
+
         # Wait for a short period to allow the navigation to occur
-        time.sleep(5)
-        
-        # Check if the current URL is the dashboard URL
-        if driver.current_url == "https://pimeyes.com/en/user/dashboard":
+        try:
+            WebDriverWait(driver, 5).until(
+                EC.url_to_be("https://pimeyes.com/en/user/dashboard")
+            )
             return True
-        else:
-            print("got false here: if driver.current_url == 'https://pimeyes.com/en/user/dashboard' ")
+        except:
+            print(
+                "Got false here: Timeout waiting for URL to be 'https://pimeyes.com/en/user/dashboard'"
+            )
             return False
+
     except Exception as e:
         print(f"Exception in is_logged_in: {e}")
         return False
@@ -100,14 +111,12 @@ def is_logged_in(driver):
 def handle_permission_checkboxes(driver):
     try:
         print("Handling permission checkboxes...")
-        
+
         # Find the checkbox container by class name
         checkbox_container = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located(
-                (By.CLASS_NAME, "permissions")
-            )
+            EC.presence_of_element_located((By.CLASS_NAME, "permissions"))
         )
-        
+
         # Find all checkboxes within the container
         checkboxes = checkbox_container.find_elements(By.TAG_NAME, "input")
 
@@ -115,8 +124,8 @@ def handle_permission_checkboxes(driver):
         for checkbox in checkboxes:
             if not checkbox.is_selected():
                 driver.execute_script("arguments[0].click();", checkbox)
-                time.sleep(0.5)  # Small delay between clicks
-                
+                # time.sleep(0.5)  # Small delay between clicks
+
         print("All checkboxes checked")
     except Exception as e:
         print(f"Error handling permission checkboxes: {str(e)}")
@@ -135,51 +144,49 @@ def click_start_search_button(driver):
     except Exception as e:
         print(f"Error clicking Start Search button: {str(e)}")
 
+
 def cookie_popup_click(driver):
     try:
         cookies_button = WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable(
+            EC.element_to_be_clickable(
                 (
-                        By.XPATH,
-                        '//*[@id="CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll"]',
-                    )
+                    By.XPATH,
+                    '//*[@id="CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll"]',
                 )
             )
+        )
         cookies_button.click()
-        print('cokkeie popup closed...')
+        print("cokkeie popup closed...")
     except Exception:
         pass
+
+
 def login(url, email, password, extractor, image_path, cookies_file="cookies.pkl"):
     driver = None
     chrome_options = Options()
     # chrome_options.add_argument("--headless")
     driver = webdriver.Chrome(options=chrome_options)
     try:
-        print('going to url')
+        print("going to url")
         driver.get(url)
-        print('url opened')
+        print("url opened")
         time.sleep(1)
-        print('going to click coolie popup')
+        # print('going to click coolie popup')
         cookie_popup_click(driver=driver)
         # Load cookies if the file exists
         try:
-            state =load_cookies(driver, cookies_file)
+            state = load_cookies(driver, cookies_file)
             driver.get(url)
             if state:
-                time.sleep(3) 
+                time.sleep(3)
         except Exception as e:
             print(f"Could not load cookies: {e}")
-            print('you are here...')
 
+        # Handle cookies popup if present
 
-          # Handle cookies popup if present
-        
-        
         # Check if login is necessary
         if not is_logged_in(driver):
             print("Login required")
-            
-
 
             email_input = WebDriverWait(driver, 10).until(
                 EC.presence_of_element_located(
@@ -222,7 +229,7 @@ def login(url, email, password, extractor, image_path, cookies_file="cookies.pkl
                 )
             )
             resend_email_button.click()
-            print('resend button clicked')
+            print("resend button clicked")
             time.sleep(10)  # Adjust the sleep time as needed
 
             verification_code = extractor.get_latest_code(
@@ -264,17 +271,15 @@ def login(url, email, password, extractor, image_path, cookies_file="cookies.pkl
         )
         abs_image_path = os.path.abspath(image_path)
         file_input.send_keys(abs_image_path)
-
+        print("waiting the fst 5 secs")
         time.sleep(5)
-
-        # time.sleep(10000)
 
         handle_permission_checkboxes(driver)
         print("All checkboxes checked")
         click_start_search_button(driver)
-        print('seach clicked')
-  
+        print("seach clicked")
 
+        print("waiting the 2nd 5 secs")
         time.sleep(5)
 
         current_url = driver.current_url
@@ -296,11 +301,10 @@ def login(url, email, password, extractor, image_path, cookies_file="cookies.pkl
         print("Last page HTML saved successfully!")
 
         extract_urls_from_html("last_page.html")
-        print('bot ended')
+        print("bot ended")
 
     except Exception as e:
         print(f"Error occurred: {str(e)}")
     finally:
         if driver:
             driver.quit()
-
