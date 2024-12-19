@@ -13,3 +13,5 @@ supervision
 ultralytics
 pillow
 selenium==4.27.1
+fastapi
+uvicorn
